@@ -1,0 +1,167 @@
+.myobsidian-dashboard {
+  padding: 2rem 2.5rem 3rem;
+  max-width: 960px;
+  margin: 0 auto;
+  line-height: 1.6;
+}
+
+.myobsidian-dashboard .mod-header h1 {
+  font-size: 1.75rem;
+  font-weight: 600;
+  margin: 0 0 0.25rem;
+  letter-spacing: -0.02em;
+}
+
+.myobsidian-dashboard .mod-subtitle {
+  color: var(--text-muted);
+  margin: 0 0 1.75rem;
+  font-size: 0.95rem;
+}
+
+.myobsidian-dashboard .mod-highlight-bar {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  margin-bottom: 2.5rem;
+  flex-wrap: wrap;
+}
+
+.myobsidian-dashboard .mod-highlight-input-wrap {
+  flex: 1;
+  min-width: 220px;
+}
+
+.myobsidian-dashboard .mod-highlight-input {
+  width: 100%;
+  padding: 0.6rem 0.85rem;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 6px;
+  background: var(--background-primary);
+  color: var(--text-normal);
+  font-size: 0.95rem;
+}
+
+.myobsidian-dashboard .mod-highlight-input:focus {
+  outline: none;
+  border-color: var(--interactive-accent);
+  box-shadow: 0 0 0 2px var(--background-modifier-border-focus);
+}
+
+.myobsidian-dashboard .mod-btn {
+  padding: 0.55rem 1rem;
+  border-radius: 6px;
+  border: 1px solid var(--background-modifier-border);
+  background: var(--interactive-accent);
+  color: var(--text-on-accent);
+  cursor: pointer;
+  font-size: 0.9rem;
+  white-space: nowrap;
+}
+
+.myobsidian-dashboard .mod-btn:hover {
+  filter: brightness(1.05);
+}
+
+.myobsidian-dashboard .mod-btn-secondary {
+  background: var(--background-secondary);
+  color: var(--text-normal);
+}
+
+.myobsidian-dashboard h2 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0 0 1rem;
+  color: var(--text-muted);
+  text-transform: none;
+  letter-spacing: 0.02em;
+}
+
+.myobsidian-dashboard .mod-section-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 0.85rem;
+  margin-bottom: 2.5rem;
+}
+
+.myobsidian-dashboard .mod-section-card {
+  padding: 1rem 1.1rem;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 8px;
+  background: var(--background-secondary);
+  cursor: pointer;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.myobsidian-dashboard .mod-section-card:hover {
+  border-color: var(--interactive-accent);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.myobsidian-dashboard .mod-section-card h3 {
+  margin: 0 0 0.35rem;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.myobsidian-dashboard .mod-section-desc {
+  margin: 0 0 0.75rem;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  line-height: 1.45;
+}
+
+.myobsidian-dashboard .mod-section-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  font-size: 0.78rem;
+  color: var(--text-faint);
+}
+
+.myobsidian-dashboard .mod-recent-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.myobsidian-dashboard .mod-recent-item {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 0.75rem;
+  align-items: center;
+  padding: 0.5rem 0.65rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.myobsidian-dashboard .mod-recent-item:hover {
+  background: var(--background-modifier-hover);
+}
+
+.myobsidian-dashboard .mod-recent-name {
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.myobsidian-dashboard .mod-recent-folder {
+  color: var(--text-faint);
+  font-size: 0.8rem;
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.myobsidian-dashboard .mod-recent-time {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+
+.myobsidian-dashboard .mod-empty {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
