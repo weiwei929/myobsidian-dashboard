@@ -165,3 +165,174 @@
   color: var(--text-muted);
   font-size: 0.9rem;
 }
+
+.myobsidian-dashboard .mod-shell-top {
+  margin-bottom: 0.5rem;
+}
+
+.myobsidian-dashboard .mod-shell-crumb {
+  margin-bottom: 1.5rem;
+}
+
+.myobsidian-dashboard .mod-shell-crumb:empty {
+  display: none;
+}
+
+.myobsidian-dashboard .mod-home-link {
+  cursor: pointer;
+}
+
+.myobsidian-dashboard .mod-home-link:hover {
+  color: var(--interactive-accent);
+}
+
+.myobsidian-dashboard .mod-breadcrumbs {
+  font-size: 0.88rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+  flex-wrap: wrap;
+}
+
+.myobsidian-dashboard .mod-breadcrumb-link {
+  color: var(--text-accent);
+  cursor: pointer;
+}
+
+.myobsidian-dashboard .mod-breadcrumb-link:hover {
+  text-decoration: underline;
+}
+
+.myobsidian-dashboard .mod-breadcrumb-current {
+  color: var(--text-normal);
+  font-weight: 500;
+}
+
+.myobsidian-dashboard .mod-breadcrumb-sep {
+  color: var(--text-faint);
+}
+
+.myobsidian-dashboard .mod-folder-header {
+  margin-bottom: 1.25rem;
+}
+
+.myobsidian-dashboard .mod-folder-header h2 {
+  margin: 0 0 0.35rem;
+  font-size: 1.35rem;
+  font-weight: 600;
+  color: var(--text-normal);
+}
+
+.myobsidian-dashboard .mod-folder-path {
+  font-size: 0.82rem;
+  color: var(--text-faint);
+  margin: 0;
+  font-family: var(--font-monospace);
+}
+
+.myobsidian-dashboard .mod-folder-intro {
+  margin-bottom: 1.75rem;
+  padding: 1rem 1.1rem;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 8px;
+  background: var(--background-secondary);
+}
+
+.myobsidian-dashboard .mod-folder-intro h3 {
+  margin: 0 0 0.75rem;
+  font-size: 0.95rem;
+  color: var(--text-muted);
+}
+
+.myobsidian-dashboard .mod-folder-intro-body {
+  max-height: 280px;
+  overflow-y: auto;
+  font-size: 0.92rem;
+}
+
+.myobsidian-dashboard .mod-folder-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.5rem;
+}
+
+.myobsidian-dashboard .mod-btn-ghost {
+  background: transparent;
+  color: var(--text-muted);
+  border-color: var(--background-modifier-border);
+  font-size: 0.82rem;
+  padding: 0.4rem 0.75rem;
+}
+
+.myobsidian-dashboard .mod-subfolders,
+.myobsidian-dashboard .mod-folder-files {
+  margin-bottom: 2rem;
+}
+
+.myobsidian-dashboard .mod-subfolders h3,
+.myobsidian-dashboard .mod-folder-files h3 {
+  font-size: 1rem;
+  color: var(--text-muted);
+}
+
+.myobsidian-dashboard .mod-subfolder-card h4 {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.myobsidian-dashboard .mod-tool-header .mod-tool-badge {
+  display: inline-block;
+  margin-top: 0.5rem;
+  padding: 0.2rem 0.5rem;
+  font-size: 0.75rem;
+  border-radius: 4px;
+  background: var(--background-modifier-border);
+  color: var(--text-muted);
+}
+
+.myobsidian-dashboard .mod-tool-body {
+  margin-bottom: 1.5rem;
+}
+
+.myobsidian-dashboard .mod-tool-desc {
+  font-size: 0.95rem;
+  margin: 0 0 0.75rem;
+}
+
+.myobsidian-dashboard .mod-tool-hint {
+  font-size: 0.88rem;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.myobsidian-dashboard .mod-doc-header {
+  margin-bottom: 1rem;
+}
+
+.myobsidian-dashboard .mod-doc-header h2 {
+  margin: 0 0 0.35rem;
+  font-size: 1.35rem;
+  color: var(--text-normal);
+}
+
+.myobsidian-dashboard .mod-doc-meta {
+  font-size: 0.82rem;
+  color: var(--text-faint);
+  margin: 0.25rem 0 0;
+}
+
+.myobsidian-dashboard .mod-doc-preview {
+  padding: 1rem 0;
+  border-top: 1px solid var(--background-modifier-border);
+}
+
+.myobsidian-dashboard .mod-truncate-note {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin-top: 0.75rem;
+}
+
+.myobsidian-dashboard .mod-reading-notes-slot {
+  display: none;
+}

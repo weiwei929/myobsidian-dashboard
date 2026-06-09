@@ -1,4 +1,5 @@
 import { App, TFile } from "obsidian";
+import { isReadablePath } from "../config/folder-policy";
 
 export function getRecentMarkdownFiles(
   app: App,
@@ -6,7 +7,7 @@ export function getRecentMarkdownFiles(
 ): TFile[] {
   const files = app.vault
     .getMarkdownFiles()
-    .slice()
+    .filter((file) => isReadablePath(file.path))
     .sort((a, b) => b.stat.mtime - a.stat.mtime);
   return files.slice(0, limit);
 }

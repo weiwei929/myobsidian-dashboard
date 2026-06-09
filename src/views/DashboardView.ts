@@ -1,22 +1,27 @@
-import { ItemView, WorkspaceLeaf, TFile, Notice } from "obsidian";
-import type {
-  AppWithInternals,
-  FileExplorerInstance,
-} from "../types/obsidian-internal";
-import { SECTION_MAPPINGS } from "../config/sections";
+import { ItemView, WorkspaceLeaf, Notice } from "obsidian";
+import type { AppWithInternals, FileExplorerInstance } from "../types/obsidian-internal";
+import {
+  canNavigateToDocument,
+  canNavigateToFolder,
+} from "../config/folder-policy";
 import { ensureTodayDailyNote } from "../daily-note/resolver";
 import { writeTodayHighlight } from "../daily-note/writer";
-import { getRecentMarkdownFiles } from "../vault/recent";
-import {
-  formatRelativeTime,
-  getSectionStats,
-  SectionStats,
-} from "../vault/stats";
+import { buildBreadcrumbs } from "../navigation/breadcrumbs";
+import type { DashboardRoute } from "../navigation/types";
+import { renderDocumentView } from "./DocumentView";
+import { renderFolderView } from "./FolderView";
+import { renderHomeView } from "./HomeView";
+import type { DashboardContext } from "./context";
 
 export const VIEW_TYPE_DASHBOARD = "myobsidian-dashboard-view";
 
 export class DashboardView extends ItemView {
+  private route: DashboardRoute = { type: "home" };
+  private shellTopEl: HTMLElement | null = null;
+  private shellCrumbEl: HTMLElement | null = null;
+  private shellBodyEl: HTMLElement | null = null;
   private highlightInput: HTMLInputElement | null = null;
+  private shellReady = false;
 
   constructor(leaf: WorkspaceLeaf) {
     super(leaf);
@@ -35,27 +40,67 @@ export class DashboardView extends ItemView {
   }
 
   async onOpen(): Promise<void> {
-    await this.render();
+    this.ensureShell();
+    await this.navigate({ type: "home" });
   }
 
   async onClose(): Promise<void> {
     this.contentEl.empty();
+    this.shellReady = false;
+    this.shellTopEl = null;
+    this.shellCrumbEl = null;
+    this.shellBodyEl = null;
+    this.highlightInput = null;
   }
 
-  async render(): Promise<void> {
+  private getContext(): DashboardContext {
+    return {
+      app: this.app,
+      component: this,
+      navigate: (route) => this.navigate(route),
+      revealInVault: (folderPath) => this.revealInVault(folderPath),
+    };
+  }
+
+  async navigate(route: DashboardRoute): Promise<void> {
+    if (route.type === "folder" && !canNavigateToFolder(route.path)) {
+      new Notice("无法导航到该目录");
+      return;
+    }
+    if (route.type === "document" && !canNavigateToDocument(route.path)) {
+      new Notice("无法预览该文件");
+      return;
+    }
+
+    this.route = route;
+    this.ensureShell();
+    this.renderBreadcrumbs();
+    await this.renderBody();
+  }
+
+  private ensureShell(): void {
+    if (this.shellReady) return;
+
     const root = this.contentEl;
     root.empty();
     root.addClass("myobsidian-dashboard");
 
-    this.renderHeader(root);
-    this.renderHighlightBar(root);
-    await this.renderSections(root);
-    this.renderRecent(root);
+    this.shellTopEl = root.createDiv({ cls: "mod-shell-top" });
+    this.renderHeader(this.shellTopEl);
+    this.renderHighlightBar(this.shellTopEl);
+
+    this.shellCrumbEl = root.createDiv({ cls: "mod-shell-crumb" });
+    this.shellBodyEl = root.createDiv({ cls: "mod-shell-body" });
+    this.shellReady = true;
   }
 
   private renderHeader(container: HTMLElement): void {
     const header = container.createDiv({ cls: "mod-header" });
-    header.createEl("h1", { text: "我的 Obsidian" });
+    const title = header.createEl("h1", { text: "我的 Obsidian" });
+    title.addClass("mod-home-link");
+    title.addEventListener("click", () => {
+      void this.navigate({ type: "home" });
+    });
     header.createEl("p", {
       cls: "mod-subtitle",
       text: "一个正在生长的个人知识库",
@@ -94,7 +139,7 @@ export class DashboardView extends ItemView {
       await writeTodayHighlight(this.app, value);
       this.highlightInput.value = "";
       new Notice("已写入今日要点");
-      await this.render();
+      await this.renderBody();
     } catch (error) {
       console.error("MyObsidian Dashboard: write highlight failed", error);
       new Notice("写入失败，请查看控制台");
@@ -111,100 +156,71 @@ export class DashboardView extends ItemView {
     }
   }
 
-  private async renderSections(container: HTMLElement): Promise<void> {
-    const section = container.createDiv({ cls: "mod-sections" });
-    section.createEl("h2", { text: "知识库板块" });
+  private renderBreadcrumbs(): void {
+    if (!this.shellCrumbEl) return;
+    this.shellCrumbEl.empty();
 
-    const grid = section.createDiv({ cls: "mod-section-grid" });
-    const statsList = SECTION_MAPPINGS.map((meta) =>
-      getSectionStats(this.app, meta)
-    );
-
-    for (const stats of statsList) {
-      this.renderSectionCard(grid, stats);
-    }
-  }
-
-  private renderSectionCard(
-    grid: HTMLElement,
-    stats: SectionStats
-  ): void {
-    const card = grid.createDiv({ cls: "mod-section-card" });
-    card.createEl("h3", { text: stats.meta.title });
-    card.createEl("p", {
-      cls: "mod-section-desc",
-      text: stats.meta.description,
-    });
-
-    const metaRow = card.createDiv({ cls: "mod-section-meta" });
-    metaRow.createSpan({
-      cls: "mod-section-count",
-      text: `${stats.fileCount} 篇 Markdown`,
-    });
-
-    const latestText = stats.latestFile
-      ? `最近：${stats.latestFile.basename}（${formatRelativeTime(stats.latestMtime)}）`
-      : "最近：暂无";
-    metaRow.createSpan({ cls: "mod-section-latest", text: latestText });
-
-    card.addEventListener("click", () => {
-      void this.openSection(stats.meta.folder);
-    });
-  }
-
-  private renderRecent(container: HTMLElement): void {
-    const section = container.createDiv({ cls: "mod-recent" });
-    section.createEl("h2", { text: "最近修改" });
-
-    const list = section.createDiv({ cls: "mod-recent-list" });
-    const files = getRecentMarkdownFiles(this.app);
-
-    if (files.length === 0) {
-      list.createEl("p", { cls: "mod-empty", text: "暂无 Markdown 文件" });
+    if (this.route.type === "home") {
+      this.shellCrumbEl.hide();
       return;
     }
 
-    for (const file of files) {
-      this.renderRecentItem(list, file);
+    this.shellCrumbEl.show();
+    const crumbs = buildBreadcrumbs(this.route);
+    const nav = this.shellCrumbEl.createDiv({ cls: "mod-breadcrumbs" });
+
+    crumbs.forEach((crumb, index) => {
+      if (index > 0) {
+        nav.createSpan({ cls: "mod-breadcrumb-sep", text: " / " });
+      }
+
+      if (crumb.clickable && crumb.folderPath) {
+        const link = nav.createSpan({ cls: "mod-breadcrumb-link", text: crumb.label });
+        link.addEventListener("click", () => {
+          void this.navigate({ type: "folder", path: crumb.folderPath! });
+        });
+      } else if (crumb.clickable && !crumb.folderPath) {
+        const link = nav.createSpan({ cls: "mod-breadcrumb-link", text: crumb.label });
+        link.addEventListener("click", () => {
+          void this.navigate({ type: "home" });
+        });
+      } else {
+        nav.createSpan({ cls: "mod-breadcrumb-current", text: crumb.label });
+      }
+    });
+  }
+
+  private async renderBody(): Promise<void> {
+    if (!this.shellBodyEl) return;
+    this.shellBodyEl.empty();
+
+    const ctx = this.getContext();
+
+    switch (this.route.type) {
+      case "home":
+        await renderHomeView(ctx, this.shellBodyEl);
+        break;
+      case "folder":
+        await renderFolderView(ctx, this.shellBodyEl, this.route.path);
+        break;
+      case "document":
+        await renderDocumentView(ctx, this.shellBodyEl, this.route.path);
+        break;
     }
   }
 
-  private async openSection(folderPath: string): Promise<void> {
-    const indexCandidates = [
-      `${folderPath}/INDEX.md`,
-      `${folderPath}/README.md`,
-    ];
-    for (const path of indexCandidates) {
-      const file = this.app.vault.getFileByPath(path);
-      if (file) {
-        await this.app.workspace.getLeaf(true).openFile(file);
-        return;
-      }
-    }
-
+  private revealInVault(folderPath: string): void {
     const folder = this.app.vault.getFolderByPath(folderPath);
+    if (!folder) {
+      new Notice("目录不存在");
+      return;
+    }
     const explorer = (this.app as unknown as AppWithInternals).internalPlugins
       .plugins["file-explorer"];
-    if (folder && explorer?.enabled) {
+    if (explorer?.enabled) {
       (explorer.instance as FileExplorerInstance).revealInFolder(folder);
       return;
     }
-
-    new Notice(`未找到 ${folderPath} 的入口页`);
-  }
-
-  private renderRecentItem(list: HTMLElement, file: TFile): void {
-    const item = list.createDiv({ cls: "mod-recent-item" });
-    item.createSpan({ cls: "mod-recent-name", text: file.basename });
-    const folder = file.parent?.path ?? "";
-    item.createSpan({ cls: "mod-recent-folder", text: folder });
-    item.createSpan({
-      cls: "mod-recent-time",
-      text: formatRelativeTime(file.stat.mtime),
-    });
-
-    item.addEventListener("click", () => {
-      void this.app.workspace.getLeaf(true).openFile(file);
-    });
+    new Notice("文件浏览器未启用");
   }
 }
