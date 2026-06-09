@@ -1,7 +1,8 @@
 import { readdirSync, existsSync, mkdirSync, writeFileSync } from "fs";
 import { join, relative } from "path";
 
-const JOURNALS_ROOT = "D:/Obsidian-Vault/MyObsidian/10-Journals";
+const VAULT_ROOT = "D:/Obsidian-Vault/MyObsidian";
+const JOURNALS_ROOT = join(VAULT_ROOT, "10-Journals");
 const REPORT_PATH =
   "D:/workspace/experiments/myobsidian-dashboard/reports/journal-rename-candidates-2026-06-09.md";
 
@@ -12,8 +13,8 @@ const EXCLUDED_SEGMENTS = new Set([
   "AnnualReviews",
 ]);
 
-const STANDARD_PATH_RE =
-  /^10-Journals\/\d{4}\/\d{2}\/\d{4}-\d{2}-\d{2}\.md$/;
+const STANDARD_DAILY_RE =
+  /^10-Journals\/(\d{4})\/(\d{2})\/\1-\2-\d{2}\.md$/;
 
 const DATE_IN_NAME_RE = /(\d{4})-(\d{2})-(\d{2})/;
 
@@ -29,23 +30,27 @@ function walkMdFiles(dir, files = []) {
   return files;
 }
 
-function isExcluded(relativePath) {
+function toVaultRelative(fullPath) {
+  return relative(VAULT_ROOT, fullPath).replace(/\\/g, "/");
+}
+
+function isUnderExcluded(relativePath) {
   const parts = relativePath.split("/").slice(1);
   return parts.some((p) => EXCLUDED_SEGMENTS.has(p));
 }
 
-function inferDate(basename, relativePath) {
-  const fromName = basename.match(DATE_IN_NAME_RE);
-  if (fromName) {
-    return `${fromName[1]}-${fromName[2]}-${fromName[3]}`;
-  }
-  const fromPath = relativePath.match(
-    /10-Journals\/(\d{4})\/(\d{2})\//
-  );
-  if (fromPath) {
-    return null;
-  }
-  return null;
+function isIndexOrReadme(basename) {
+  return basename === "INDEX.md" || basename === "README.md";
+}
+
+function isStandardDailyPath(relativePath) {
+  return STANDARD_DAILY_RE.test(relativePath);
+}
+
+function inferDateFromBasename(basename) {
+  const match = basename.match(DATE_IN_NAME_RE);
+  if (!match) return null;
+  return `${match[1]}-${match[2]}-${match[3]}`;
 }
 
 function suggestTarget(inferredDate) {
@@ -54,10 +59,33 @@ function suggestTarget(inferredDate) {
   return `10-Journals/${y}/${m}/${inferredDate}.md`;
 }
 
+function classifyCandidate(relativePath, basename) {
+  if (isUnderExcluded(relativePath)) {
+    return { include: false, reason: "位于排除目录" };
+  }
+  if (isIndexOrReadme(basename)) {
+    return { include: false, reason: "索引/说明页，非日记" };
+  }
+  if (isStandardDailyPath(relativePath)) {
+    return { include: false, reason: "已符合标准路径" };
+  }
+
+  const inYearMonth = /^10-Journals\/\d{4}\/\d{2}\//.test(relativePath);
+  const inferredDate = inferDateFromBasename(basename);
+
+  if (inYearMonth) {
+    return { include: true, inferredDate, reason: "年月目录下文件名非标准" };
+  }
+  if (inferredDate) {
+    return { include: true, inferredDate, reason: "路径层级非标准但文件名含日期" };
+  }
+  return { include: false, reason: "非日记候选（无日期线索）" };
+}
+
 function riskNote(entry) {
   const notes = [];
   if (!entry.inferredDate) {
-    notes.push("无法从文件名或路径可靠推断日期");
+    notes.push("无法可靠推断日期");
   }
   if (entry.targetExists) {
     notes.push("目标路径已存在，改名会冲突");
@@ -65,17 +93,13 @@ function riskNote(entry) {
   if (entry.basename !== `${entry.inferredDate}.md` && entry.inferredDate) {
     notes.push("文件名含非标准后缀或字符");
   }
-  if (isExcluded(entry.relativePath)) {
-    notes.push("位于排除目录（不应改名）");
-  }
   return notes.length ? notes.join("；") : "低风险，可人工确认后迁移";
 }
 
 function shouldRename(entry) {
-  if (entry.isStandard) return false;
-  if (isExcluded(entry.relativePath)) return false;
-  if (!entry.suggestedTarget) return false;
+  if (!entry.inferredDate || !entry.suggestedTarget) return false;
   if (entry.targetExists) return false;
+  if (entry.relativePath === entry.suggestedTarget) return false;
   return true;
 }
 
@@ -84,20 +108,15 @@ function main() {
   const candidates = [];
 
   for (const full of allFiles) {
-    const relativePath = relative(
-      "D:/Obsidian-Vault/MyObsidian",
-      full
-    ).replace(/\\/g, "/");
+    const relativePath = toVaultRelative(full);
     const basename = full.split(/[/\\]/).pop();
-    const isStandard = STANDARD_PATH_RE.test(relativePath);
-    if (isStandard) continue;
+    const classified = classifyCandidate(relativePath, basename);
+    if (!classified.include) continue;
 
-    const inferredDate = inferDate(basename, relativePath);
+    const inferredDate = classified.inferredDate ?? null;
     const suggestedTarget = suggestTarget(inferredDate);
     const targetExists = suggestedTarget
-      ? existsSync(
-          join("D:/Obsidian-Vault/MyObsidian", suggestedTarget)
-        )
+      ? existsSync(join(VAULT_ROOT, suggestedTarget))
       : false;
 
     const entry = {
@@ -106,7 +125,7 @@ function main() {
       inferredDate,
       suggestedTarget,
       targetExists,
-      isStandard,
+      classifyReason: classified.reason,
     };
 
     candidates.push({
@@ -129,9 +148,11 @@ function main() {
     "",
     "排除目录：`Templates`、`WeeklyReviews`、`MonthlyReviews`、`AnnualReviews`",
     "",
+    "排除文件：`INDEX.md`、`README.md`（索引/说明页）",
+    "",
     "状态：**只读审计，未执行任何改名**",
     "",
-    `共发现 **${candidates.length}** 个非标准路径 Markdown 文件。`,
+    `共发现 **${candidates.length}** 个日记命名候选（已过滤标准日记与索引页）。`,
     "",
     "## 汇总",
     "",
@@ -141,13 +162,13 @@ function main() {
     "",
     "## 候选明细",
     "",
-    "| 当前路径 | 推断日期 | 建议目标路径 | 目标已存在 | 建议改名 | 风险说明 |",
-    "| --- | --- | --- | --- | --- | --- |",
+    "| 当前路径 | 推断日期 | 建议目标路径 | 目标已存在 | 建议改名 | 分类 | 风险说明 |",
+    "| --- | --- | --- | --- | --- | --- | --- |",
   ];
 
   for (const c of candidates) {
     lines.push(
-      `| \`${c.relativePath}\` | ${c.inferredDate ?? "—"} | ${c.suggestedTarget ? `\`${c.suggestedTarget}\`` : "—"} | ${c.targetExists ? "是" : "否"} | ${c.recommend ? "是" : "否"} | ${c.risk} |`
+      `| \`${c.relativePath}\` | ${c.inferredDate ?? "—"} | ${c.suggestedTarget ? `\`${c.suggestedTarget}\`` : "—"} | ${c.targetExists ? "是" : "否"} | ${c.recommend ? "是" : "否"} | ${c.classifyReason} | ${c.risk} |`
     );
   }
 
@@ -155,7 +176,7 @@ function main() {
   lines.push("## 说明");
   lines.push("");
   lines.push("- 本清单仅基于路径与文件名模式推断，未读取文件正文。");
-  lines.push("- `INDEX.md`、`README.md` 等索引页列入非标准路径，但通常不应改名。");
+  lines.push("- 已符合 `10-Journals/YYYY/MM/YYYY-MM-DD.md` 的日记**不列入**本表。");
   lines.push("- 执行改名前须人工确认；冲突文件必须跳过，不得覆盖。");
 
   mkdirSync(join(REPORT_PATH, ".."), { recursive: true });
