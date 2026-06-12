@@ -127,6 +127,12 @@ export class DashboardView extends ItemView {
       text: "打开今日日记",
     });
     openBtn.addEventListener("click", () => this.openTodayJournal());
+
+    const exitBtn = bar.createEl("button", {
+      cls: "mod-btn mod-btn-ghost",
+      text: "关闭首页",
+    });
+    exitBtn.addEventListener("click", () => this.exitDashboard());
   }
 
   private async handleHighlightSubmit(): Promise<void> {
@@ -206,6 +212,14 @@ export class DashboardView extends ItemView {
         await renderDocumentView(ctx, this.shellBodyEl, this.route.path);
         break;
     }
+  }
+
+  /** 退出 Dashboard 前台，回到 Obsidian 新标签页 */
+  private async exitDashboard(): Promise<void> {
+    await this.leaf.setViewState({
+      type: "empty",
+      active: true,
+    });
   }
 
   /** 保守打开 Vault 目录：尝试打开入口文件，失败时提示路径 */
