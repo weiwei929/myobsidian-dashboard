@@ -1,5 +1,6 @@
 import { App, TFile, TFolder } from "obsidian";
 import { SectionMeta } from "../config/sections";
+import { BLOCKED_PATH_SEGMENTS } from "../config/folder-policy";
 
 export interface SectionStats {
   meta: SectionMeta;
@@ -8,6 +9,7 @@ export interface SectionStats {
   latestMtime: number;
 }
 
+/** 递归收集目录内所有 Markdown 文件，跳过被禁止的路径段 */
 function collectMarkdownFiles(folder: TFolder): TFile[] {
   const files: TFile[] = [];
   const walk = (node: TFolder) => {
@@ -15,6 +17,7 @@ function collectMarkdownFiles(folder: TFolder): TFile[] {
       if (child instanceof TFile && child.extension === "md") {
         files.push(child);
       } else if (child instanceof TFolder) {
+        if (BLOCKED_PATH_SEGMENTS.has(child.name)) continue;
         walk(child);
       }
     }

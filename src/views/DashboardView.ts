@@ -1,5 +1,4 @@
 import { ItemView, WorkspaceLeaf, Notice } from "obsidian";
-import type { AppWithInternals, FileExplorerInstance } from "../types/obsidian-internal";
 import {
   canNavigateToDocument,
   canNavigateToFolder,
@@ -209,18 +208,15 @@ export class DashboardView extends ItemView {
     }
   }
 
-  private revealInVault(folderPath: string): void {
-    const folder = this.app.vault.getFolderByPath(folderPath);
-    if (!folder) {
-      new Notice("目录不存在");
-      return;
+  /** 保守打开 Vault 目录：尝试打开入口文件，失败时提示路径 */
+  private async revealInVault(folderPath: string): Promise<void> {
+    for (const name of ["README.md", "INDEX.md", "index.md"]) {
+      const file = this.app.vault.getFileByPath(`${folderPath}/${name}`);
+      if (file) {
+        await this.app.workspace.getLeaf(true).openFile(file);
+        return;
+      }
     }
-    const explorer = (this.app as unknown as AppWithInternals).internalPlugins
-      .plugins["file-explorer"];
-    if (explorer?.enabled) {
-      (explorer.instance as FileExplorerInstance).revealInFolder(folder);
-      return;
-    }
-    new Notice("文件浏览器未启用");
+    new Notice(`请在 Obsidian 文件浏览器中定位：${folderPath}`);
   }
 }

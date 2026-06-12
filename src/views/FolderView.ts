@@ -47,11 +47,19 @@ export async function renderFolderView(
   }
 
   const actions = container.createDiv({ cls: "mod-folder-actions" });
-  const revealBtn = actions.createEl("button", {
-    cls: "mod-btn mod-btn-ghost",
-    text: "在文件浏览器中定位",
+  const backBtn = actions.createEl("button", {
+    cls: "mod-btn mod-btn-secondary",
+    text: "返回上级",
   });
-  revealBtn.addEventListener("click", () => ctx.revealInVault(folderPath));
+  backBtn.addEventListener("click", () => {
+    const segments = folderPath.split("/");
+    if (segments.length <= 1) {
+      void ctx.navigate({ type: "home" });
+    } else {
+      segments.pop();
+      void ctx.navigate({ type: "folder", path: segments.join("/") });
+    }
+  });
 
   const { subfolders, files } = getFolderContents(ctx.app, folderPath);
 

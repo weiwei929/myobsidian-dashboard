@@ -98,10 +98,26 @@ export function isIntroFile(filename: string): boolean {
 export function isCorruptedIntroContent(content: string): boolean {
   const trimmed = content.trim();
   if (!trimmed) return true;
-  if (trimmed.includes("Legacy70-Templates") && trimmed.length > 400) {
-    return true;
+
+  // 过长的 H1 基本就是损坏
+  const firstLine = trimmed.split("\n")[0] ?? "";
+  if (firstLine.length > 120) return true;
+
+  // Legacy 路径残留检查（正斜杠与反斜杠两种）
+  const legacyPatterns = [
+    /LegacyTemplates/gi,
+    /LegacyVault/gi,
+    /LegacyAttachments/gi,
+    /\\\\Legacy/,
+  ];
+  let totalHits = 0;
+  for (const pat of legacyPatterns) {
+    totalHits += (trimmed.match(pat) ?? []).length;
   }
-  const legacyHits = (trimmed.match(/LegacyTemplates/g) ?? []).length;
-  if (legacyHits >= 3) return true;
+  if (totalHits >= 3) return true;
+
+  // 重复编号路径模式如 70-70-70、80-80-80、90-90-90
+  if (/\b\d{2,3}(-\d{2,3}){3,}/.test(firstLine)) return true;
+
   return false;
 }

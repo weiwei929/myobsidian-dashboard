@@ -33,5 +33,5 @@ export async function renderToolFolderView(
     cls: "mod-btn",
     text: "在 Obsidian Vault 中打开",
   });
-  openBtn.addEventListener("click", () => ctx.revealInVault(folderPath));
+  openBtn.addEventListener("click", () => { void ctx.revealInVault(folderPath); });
 }

@@ -5,5 +5,5 @@ export interface DashboardContext {
   app: App;
   component: Component;
   navigate: (route: DashboardRoute) => Promise<void>;
-  revealInVault: (folderPath: string) => void;
+  revealInVault: (folderPath: string) => Promise<void>;
 }
