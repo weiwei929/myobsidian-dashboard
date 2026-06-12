@@ -29,11 +29,12 @@
 .myobsidian-dashboard .mod-highlight-input-wrap {
   flex: 1;
   min-width: 220px;
+  position: relative;
 }
 
 .myobsidian-dashboard .mod-highlight-input {
   width: 100%;
-  padding: 0.6rem 0.85rem;
+  padding: 0.6rem 4.5rem 1.8rem 0.85rem;
   border: 1px solid var(--background-modifier-border);
   border-radius: 6px;
   background: var(--background-primary);
@@ -49,6 +50,33 @@
   outline: none;
   border-color: var(--interactive-accent);
   box-shadow: 0 0 0 2px var(--background-modifier-border-focus);
+}
+
+.myobsidian-dashboard .mod-highlight-save-btn {
+  position: absolute;
+  bottom: 0.35rem;
+  right: 0.4rem;
+  padding: 0.15rem 0.55rem;
+  font-size: 0.78rem;
+  border-radius: 4px;
+  background: var(--interactive-accent);
+  color: var(--text-on-accent);
+  border: none;
+  cursor: pointer;
+  line-height: 1.5;
+}
+
+.myobsidian-dashboard .mod-highlight-save-btn:hover {
+  filter: brightness(1.08);
+}
+
+.myobsidian-dashboard .mod-highlight-status {
+  position: absolute;
+  bottom: 0.4rem;
+  left: 0.9rem;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  pointer-events: none;
 }
 
 .myobsidian-dashboard .mod-btn {

@@ -20,6 +20,7 @@ export class DashboardView extends ItemView {
   private shellCrumbEl: HTMLElement | null = null;
   private shellBodyEl: HTMLElement | null = null;
   private highlightInput: HTMLTextAreaElement | null = null;
+  private highlightStatusEl: HTMLElement | null = null;
   private shellReady = false;
 
   constructor(leaf: WorkspaceLeaf) {
@@ -50,6 +51,7 @@ export class DashboardView extends ItemView {
     this.shellCrumbEl = null;
     this.shellBodyEl = null;
     this.highlightInput = null;
+    this.highlightStatusEl = null;
   }
 
   private getContext(): DashboardContext {
@@ -123,11 +125,15 @@ export class DashboardView extends ItemView {
       }
     });
 
-    const saveBtn = bar.createEl("button", {
-      cls: "mod-btn mod-btn-secondary",
-      text: "保存要点",
+    const saveBtn = inputWrap.createEl("button", {
+      cls: "mod-btn mod-highlight-save-btn",
+      text: "保存",
     });
     saveBtn.addEventListener("click", () => this.handleHighlightSubmit());
+
+    this.highlightStatusEl = inputWrap.createEl("span", {
+      cls: "mod-highlight-status",
+    });
 
     const openBtn = bar.createEl("button", {
       cls: "mod-btn mod-btn-secondary",
@@ -149,8 +155,11 @@ export class DashboardView extends ItemView {
 
     try {
       await writeTodayHighlight(this.app, value);
-      this.highlightInput.value = "";
-      new Notice("已写入今日要点");
+      const now = new Date();
+      const ts = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+      if (this.highlightStatusEl) {
+        this.highlightStatusEl.textContent = `已保存 ${ts}`;
+      }
       await this.renderBody();
     } catch (error) {
       console.error("MyObsidian Dashboard: write highlight failed", error);
