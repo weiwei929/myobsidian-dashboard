@@ -42,6 +42,7 @@
   font-size: 0.95rem;
   resize: none;
   max-height: 7rem;
+  overflow-y: auto;
   font-family: inherit;
   line-height: 1.5;
   box-sizing: border-box;
