@@ -20,7 +20,8 @@ export class DashboardView extends ItemView {
   private shellCrumbEl: HTMLElement | null = null;
   private shellBodyEl: HTMLElement | null = null;
   private highlightInput: HTMLTextAreaElement | null = null;
-  private highlightStatusEl: HTMLElement | null = null;
+  private savedHighlights: Array<{ time: string; text: string }> = [];
+  private savedHighlightsEl: HTMLElement | null = null;
   private shellReady = false;
 
   constructor(leaf: WorkspaceLeaf) {
@@ -51,7 +52,8 @@ export class DashboardView extends ItemView {
     this.shellCrumbEl = null;
     this.shellBodyEl = null;
     this.highlightInput = null;
-    this.highlightStatusEl = null;
+    this.savedHighlights = [];
+    this.savedHighlightsEl = null;
   }
 
   private getContext(): DashboardContext {
@@ -111,15 +113,21 @@ export class DashboardView extends ItemView {
   private renderHighlightBar(container: HTMLElement): void {
     const bar = container.createDiv({ cls: "mod-highlight-bar" });
 
+    this.savedHighlightsEl = bar.createDiv({ cls: "mod-saved-highlights" });
+    this.renderSavedHighlights();
+
     const inputWrap = bar.createDiv({ cls: "mod-highlight-input-wrap" });
     this.highlightInput = inputWrap.createEl("textarea", {
-      placeholder: "今日要点 — 输入感想，Ctrl+Enter 保存",
+      placeholder: "- 输入今日要点，Enter 保存",
       cls: "mod-highlight-input",
     });
-    this.highlightInput.rows = 3;
+    this.highlightInput.rows = 2;
 
     this.highlightInput.addEventListener("keydown", async (event) => {
-      if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) {
+      if (event.key === "Enter" && !event.shiftKey && !event.ctrlKey && !event.metaKey) {
+        event.preventDefault();
+        await this.handleHighlightSubmit();
+      } else if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) {
         event.preventDefault();
         await this.handleHighlightSubmit();
       }
@@ -130,10 +138,6 @@ export class DashboardView extends ItemView {
       text: "保存",
     });
     saveBtn.addEventListener("click", () => this.handleHighlightSubmit());
-
-    this.highlightStatusEl = inputWrap.createEl("span", {
-      cls: "mod-highlight-status",
-    });
 
     const openBtn = bar.createEl("button", {
       cls: "mod-btn mod-btn-secondary",
@@ -148,6 +152,17 @@ export class DashboardView extends ItemView {
     exitBtn.addEventListener("click", () => this.exitDashboard());
   }
 
+  private renderSavedHighlights(): void {
+    if (!this.savedHighlightsEl) return;
+    this.savedHighlightsEl.empty();
+    if (this.savedHighlights.length === 0) return;
+    for (const item of this.savedHighlights) {
+      const row = this.savedHighlightsEl.createDiv({ cls: "mod-saved-item" });
+      row.createSpan({ cls: "mod-saved-time", text: item.time });
+      row.createSpan({ cls: "mod-saved-text", text: item.text });
+    }
+  }
+
   private async handleHighlightSubmit(): Promise<void> {
     if (!this.highlightInput) return;
     const value = this.highlightInput.value.trim();
@@ -157,9 +172,10 @@ export class DashboardView extends ItemView {
       await writeTodayHighlight(this.app, value);
       const now = new Date();
       const ts = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
-      if (this.highlightStatusEl) {
-        this.highlightStatusEl.textContent = `已保存 ${ts}`;
-      }
+      const firstLine = value.split("\n")[0]?.trim() ?? "";
+      this.savedHighlights.unshift({ time: ts, text: firstLine });
+      this.highlightInput.value = "";
+      this.renderSavedHighlights();
       await this.renderBody();
     } catch (error) {
       console.error("MyObsidian Dashboard: write highlight failed", error);

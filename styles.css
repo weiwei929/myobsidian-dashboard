@@ -34,14 +34,14 @@
 
 .myobsidian-dashboard .mod-highlight-input {
   width: 100%;
-  padding: 0.6rem 4.5rem 1.8rem 0.85rem;
+  padding: 0.5rem 4rem 0.5rem 0.85rem;
   border: 1px solid var(--background-modifier-border);
   border-radius: 6px;
   background: var(--background-primary);
   color: var(--text-normal);
   font-size: 0.95rem;
   resize: none;
-  max-height: 6rem;
+  max-height: 4.5rem;
   font-family: inherit;
   line-height: 1.5;
 }
@@ -70,13 +70,34 @@
   filter: brightness(1.08);
 }
 
-.myobsidian-dashboard .mod-highlight-status {
-  position: absolute;
-  bottom: 0.4rem;
-  left: 0.9rem;
-  font-size: 0.72rem;
+.myobsidian-dashboard .mod-saved-highlights {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-bottom: 0.3rem;
+}
+
+.myobsidian-dashboard .mod-saved-item {
+  display: flex;
+  gap: 0.5rem;
+  align-items: baseline;
+  font-size: 0.82rem;
   color: var(--text-muted);
-  pointer-events: none;
+  line-height: 1.4;
+}
+
+.myobsidian-dashboard .mod-saved-time {
+  white-space: nowrap;
+  flex-shrink: 0;
+  font-family: var(--font-monospace);
+  font-size: 0.75rem;
+  color: var(--text-faint);
+}
+
+.myobsidian-dashboard .mod-saved-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .myobsidian-dashboard .mod-btn {
