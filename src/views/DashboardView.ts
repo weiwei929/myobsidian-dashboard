@@ -118,10 +118,10 @@ export class DashboardView extends ItemView {
 
     const inputWrap = bar.createDiv({ cls: "mod-highlight-input-wrap" });
     this.highlightInput = inputWrap.createEl("textarea", {
-      placeholder: "- 输入今日要点，Enter 保存",
+      placeholder: "- 输入今日要点，Enter 保存，Shift+Enter 换行",
       cls: "mod-highlight-input",
     });
-    this.highlightInput.rows = 2;
+    this.highlightInput.rows = 1;
 
     this.highlightInput.addEventListener("keydown", async (event) => {
       if (event.key === "Enter" && !event.shiftKey && !event.ctrlKey && !event.metaKey) {
@@ -133,11 +133,7 @@ export class DashboardView extends ItemView {
       }
     });
 
-    const saveBtn = inputWrap.createEl("button", {
-      cls: "mod-btn mod-highlight-save-btn",
-      text: "保存",
-    });
-    saveBtn.addEventListener("click", () => this.handleHighlightSubmit());
+    this.highlightInput.addEventListener("input", () => this.resizeHighlightInput());
 
     const openBtn = bar.createEl("button", {
       cls: "mod-btn mod-btn-secondary",
@@ -163,6 +159,13 @@ export class DashboardView extends ItemView {
     }
   }
 
+  private resizeHighlightInput(): void {
+    const el = this.highlightInput;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${el.scrollHeight}px`;
+  }
+
   private async handleHighlightSubmit(): Promise<void> {
     if (!this.highlightInput) return;
     const value = this.highlightInput.value.trim();
@@ -176,6 +179,7 @@ export class DashboardView extends ItemView {
       this.savedHighlights.unshift({ time: ts, text: firstLine });
       this.savedHighlights = this.savedHighlights.slice(0, 5);
       this.highlightInput.value = "";
+      this.highlightInput.style.height = "auto";
       this.renderSavedHighlights();
       await this.renderBody();
     } catch (error) {
