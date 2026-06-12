@@ -174,6 +174,7 @@ export class DashboardView extends ItemView {
       const ts = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
       const firstLine = value.split("\n")[0]?.trim() ?? "";
       this.savedHighlights.unshift({ time: ts, text: firstLine });
+      this.savedHighlights = this.savedHighlights.slice(0, 5);
       this.highlightInput.value = "";
       this.renderSavedHighlights();
       await this.renderBody();
