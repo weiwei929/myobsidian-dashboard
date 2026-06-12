@@ -29,49 +29,55 @@ export default class MyObsidianDashboardPlugin extends Plugin {
     const { workspace } = this.app;
     const activeLeaf = workspace.activeLeaf;
 
-    // 优先：当前 active leaf 是可替换页则直接替换
-    if (activeLeaf && this.isReplaceableLeaf(activeLeaf)) {
-      await activeLeaf.setViewState({
+    /** 将指定 leaf 替换为 Dashboard，并清理其他 Dashboard leaf */
+    const replaceWithDashboard = async (leaf: WorkspaceLeaf) => {
+      await leaf.setViewState({
         type: VIEW_TYPE_DASHBOARD,
         active: true,
       });
-
-      // 清理其他 Dashboard leaf，避免右侧旧实例残留
-      for (const leaf of workspace.getLeavesOfType(VIEW_TYPE_DASHBOARD)) {
-        if (leaf !== activeLeaf) {
-          leaf.detach();
-        }
+      for (const other of workspace.getLeavesOfType(VIEW_TYPE_DASHBOARD)) {
+        if (other !== leaf) other.detach();
       }
+      workspace.revealLeaf(leaf);
+    };
 
-      workspace.revealLeaf(activeLeaf);
+    // 1. active leaf 是空页 → 直接替换
+    if (activeLeaf?.view.getViewType() === "empty") {
+      await replaceWithDashboard(activeLeaf);
       return;
     }
 
-    // 次优：已有 Dashboard leaf 则复用
+    // 2. 扫描主工作区所有 leaf，找第一个空页（active leaf 可能不是空页）
+    const emptyLeaf = workspace
+      .getLeavesOfType("empty")
+      .find((leaf) => leaf !== activeLeaf);
+    if (emptyLeaf) {
+      await replaceWithDashboard(emptyLeaf);
+      return;
+    }
+
+    // 3. active leaf 是其他可替换页（非 markdown / 非 dashboard）
+    if (activeLeaf && this.isReplaceableLeaf(activeLeaf)) {
+      await replaceWithDashboard(activeLeaf);
+      return;
+    }
+
+    // 4. 已有 Dashboard leaf → 复用
     const existing = workspace.getLeavesOfType(VIEW_TYPE_DASHBOARD);
     if (existing.length > 0) {
       workspace.revealLeaf(existing[0]);
       return;
     }
 
-    // 兜底：新开主工作区标签页
-    const leaf = workspace.getLeaf(true);
-    await leaf.setViewState({
-      type: VIEW_TYPE_DASHBOARD,
-      active: true,
-    });
-    workspace.revealLeaf(leaf);
+    // 5. 兜底：新开主工作区标签页
+    await replaceWithDashboard(workspace.getLeaf(true));
   }
 
-  /** 空白页 / 非 markdown 非 dashboard 的页面可替换；编辑 Markdown 时保守新开 */
+  /** 非 markdown / 非 dashboard 的 leaf 可替换；编辑 Markdown 时保守新开 */
   private isReplaceableLeaf(leaf: WorkspaceLeaf): boolean {
     const viewType = leaf.view.getViewType();
-    if (viewType === "empty") {
-      return true;
-    }
-    if (viewType === "markdown") {
-      return false;
-    }
+    if (viewType === "empty") return true;
+    if (viewType === "markdown") return false;
     return viewType !== VIEW_TYPE_DASHBOARD;
   }
 }
