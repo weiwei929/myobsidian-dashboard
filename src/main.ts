@@ -27,19 +27,35 @@ export default class MyObsidianDashboardPlugin extends Plugin {
 
   async activateDashboard(): Promise<void> {
     const { workspace } = this.app;
-    const existing = workspace.getLeavesOfType(VIEW_TYPE_DASHBOARD);
+    const activeLeaf = workspace.activeLeaf;
 
+    // 优先：当前 active leaf 是可替换页则直接替换
+    if (activeLeaf && this.isReplaceableLeaf(activeLeaf)) {
+      await activeLeaf.setViewState({
+        type: VIEW_TYPE_DASHBOARD,
+        active: true,
+      });
+
+      // 清理其他 Dashboard leaf，避免右侧旧实例残留
+      for (const leaf of workspace.getLeavesOfType(VIEW_TYPE_DASHBOARD)) {
+        if (leaf !== activeLeaf) {
+          leaf.detach();
+        }
+      }
+
+      workspace.revealLeaf(activeLeaf);
+      return;
+    }
+
+    // 次优：已有 Dashboard leaf 则复用
+    const existing = workspace.getLeavesOfType(VIEW_TYPE_DASHBOARD);
     if (existing.length > 0) {
       workspace.revealLeaf(existing[0]);
       return;
     }
 
-    const activeLeaf = workspace.activeLeaf;
-    const leaf =
-      activeLeaf && this.isReplaceableLeaf(activeLeaf)
-        ? activeLeaf
-        : workspace.getLeaf(true);
-
+    // 兜底：新开主工作区标签页
+    const leaf = workspace.getLeaf(true);
     await leaf.setViewState({
       type: VIEW_TYPE_DASHBOARD,
       active: true,
@@ -47,7 +63,7 @@ export default class MyObsidianDashboardPlugin extends Plugin {
     workspace.revealLeaf(leaf);
   }
 
-  /** 空白页可替换；正在编辑 Markdown 时保守新开标签页 */
+  /** 空白页 / 非 markdown 非 dashboard 的页面可替换；编辑 Markdown 时保守新开 */
   private isReplaceableLeaf(leaf: WorkspaceLeaf): boolean {
     const viewType = leaf.view.getViewType();
     if (viewType === "empty") {
