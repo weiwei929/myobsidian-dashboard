@@ -24,10 +24,14 @@ export const HIDDEN_ROOT_FOLDERS = new Set(["00-Dashboard"]);
 /** 路径中禁止导航的段（含面包屑、列表、最近修改） */
 export const BLOCKED_PATH_SEGMENTS = new Set([
   "LegacyAttachments",
+  "LegacyTemplates",
+  "LegacyVault",
   "00-Dashboard",
   ".obsidian",
   ".trash",
   ".venv",
+  "node_modules",
+  "site-packages",
 ]);
 
 export const INTRO_FILENAMES = new Set(["README.md", "INDEX.md", "index.md"]);

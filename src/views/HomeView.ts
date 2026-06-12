@@ -1,5 +1,6 @@
 import { TFile } from "obsidian";
 import { SECTION_MAPPINGS } from "../config/sections";
+import { TOOL_ROOT_FOLDERS } from "../config/folder-policy";
 import { getRecentMarkdownFiles } from "../vault/recent";
 import { formatRelativeTime, getSectionStats, SectionStats } from "../vault/stats";
 import type { DashboardContext } from "./context";
@@ -13,8 +14,12 @@ export async function renderHomeView(
 
   const grid = section.createDiv({ cls: "mod-section-grid" });
   for (const meta of SECTION_MAPPINGS) {
-    const stats = getSectionStats(ctx.app, meta);
-    renderSectionCard(ctx, grid, stats);
+    if (TOOL_ROOT_FOLDERS.has(meta.folder)) {
+      renderToolSectionCard(ctx, grid, meta);
+    } else {
+      const stats = getSectionStats(ctx.app, meta);
+      renderSectionCard(ctx, grid, stats);
+    }
   }
 
   renderRecent(ctx, container);
@@ -41,6 +46,23 @@ function renderSectionCard(
 
   card.addEventListener("click", () => {
     void ctx.navigate({ type: "folder", path: stats.meta.folder });
+  });
+}
+
+function renderToolSectionCard(
+  ctx: DashboardContext,
+  grid: HTMLElement,
+  meta: typeof SECTION_MAPPINGS[number]
+): void {
+  const card = grid.createDiv({ cls: "mod-section-card" });
+  card.createEl("h3", { text: meta.title });
+  card.createEl("p", { cls: "mod-section-desc", text: meta.description });
+
+  const badge = card.createDiv({ cls: "mod-section-meta" });
+  badge.createSpan({ cls: "mod-section-count", text: "工具 / 管理入口" });
+
+  card.addEventListener("click", () => {
+    void ctx.navigate({ type: "folder", path: meta.folder });
   });
 }
 
