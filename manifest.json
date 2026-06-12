@@ -1,7 +1,7 @@
 {
   "id": "myobsidian-dashboard",
   "name": "MyObsidian Dashboard",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "minAppVersion": "1.5.0",
   "description": "阅读优先的 Vault 前台：博客式分层导航、今日要点与文档预览。",
   "author": "MyObsidian",
