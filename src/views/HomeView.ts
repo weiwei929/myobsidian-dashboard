@@ -1,6 +1,7 @@
 import { TFile } from "obsidian";
 import { SECTION_MAPPINGS } from "../config/sections";
 import { TOOL_ROOT_FOLDERS } from "../config/folder-policy";
+import { formatDisplayPath } from "../navigation/labels";
 import { getRecentMarkdownFiles } from "../vault/recent";
 import { formatRelativeTime, getSectionStats, SectionStats } from "../vault/stats";
 import type { DashboardContext } from "./context";
@@ -10,7 +11,7 @@ export async function renderHomeView(
   container: HTMLElement
 ): Promise<void> {
   const section = container.createDiv({ cls: "mod-sections" });
-  section.createEl("h2", { text: "知识库板块" });
+  section.createEl("h2", { text: "知识库总览" });
 
   const grid = section.createDiv({ cls: "mod-section-grid" });
   for (const meta of SECTION_MAPPINGS) {
@@ -90,9 +91,10 @@ function renderRecentItem(
 ): void {
   const item = list.createDiv({ cls: "mod-recent-item" });
   item.createSpan({ cls: "mod-recent-name", text: file.basename });
+  const parentPath = file.parent?.path ?? "";
   item.createSpan({
     cls: "mod-recent-folder",
-    text: file.parent?.path ?? "",
+    text: parentPath ? formatDisplayPath(parentPath) : "",
   });
   item.createSpan({
     cls: "mod-recent-time",

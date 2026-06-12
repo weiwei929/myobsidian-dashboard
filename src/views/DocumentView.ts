@@ -1,5 +1,6 @@
 import { TFile } from "obsidian";
 import { canNavigateToDocument } from "../config/folder-policy";
+import { formatDisplayPath } from "../navigation/labels";
 import { renderFilePreview } from "../render/markdown";
 import { formatRelativeTime } from "../vault/stats";
 import type { DashboardContext } from "./context";
@@ -25,6 +26,13 @@ export async function renderDocumentView(
 
   const header = container.createDiv({ cls: "mod-doc-header" });
   header.createEl("h2", { text: file.basename.replace(/\.md$/i, "") });
+  const navPath = file.parent?.path ? formatDisplayPath(file.parent.path) : "";
+  if (navPath) {
+    header.createEl("p", {
+      cls: "mod-doc-meta",
+      text: navPath,
+    });
+  }
   header.createEl("p", { cls: "mod-folder-path", text: file.path });
   header.createEl("p", {
     cls: "mod-doc-meta",

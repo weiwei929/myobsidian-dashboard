@@ -19,7 +19,7 @@ export class DashboardView extends ItemView {
   private shellTopEl: HTMLElement | null = null;
   private shellCrumbEl: HTMLElement | null = null;
   private shellBodyEl: HTMLElement | null = null;
-  private highlightInput: HTMLInputElement | null = null;
+  private highlightInput: HTMLTextAreaElement | null = null;
   private shellReady = false;
 
   constructor(leaf: WorkspaceLeaf) {
@@ -110,17 +110,24 @@ export class DashboardView extends ItemView {
     const bar = container.createDiv({ cls: "mod-highlight-bar" });
 
     const inputWrap = bar.createDiv({ cls: "mod-highlight-input-wrap" });
-    this.highlightInput = inputWrap.createEl("input", {
-      type: "text",
-      placeholder: "今日要点 — 输入一句，回车保存",
+    this.highlightInput = inputWrap.createEl("textarea", {
+      placeholder: "今日要点 — 输入感想，Ctrl+Enter 保存",
       cls: "mod-highlight-input",
     });
+    this.highlightInput.rows = 3;
 
     this.highlightInput.addEventListener("keydown", async (event) => {
-      if (event.key !== "Enter") return;
-      event.preventDefault();
-      await this.handleHighlightSubmit();
+      if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) {
+        event.preventDefault();
+        await this.handleHighlightSubmit();
+      }
     });
+
+    const saveBtn = bar.createEl("button", {
+      cls: "mod-btn mod-btn-secondary",
+      text: "保存要点",
+    });
+    saveBtn.addEventListener("click", () => this.handleHighlightSubmit());
 
     const openBtn = bar.createEl("button", {
       cls: "mod-btn mod-btn-secondary",
@@ -130,7 +137,7 @@ export class DashboardView extends ItemView {
 
     const exitBtn = bar.createEl("button", {
       cls: "mod-btn mod-btn-ghost",
-      text: "关闭首页",
+      text: "退出导航",
     });
     exitBtn.addEventListener("click", () => this.exitDashboard());
   }

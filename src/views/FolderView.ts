@@ -1,6 +1,6 @@
 import { TFile } from "obsidian";
 import { getFolderMode } from "../config/folder-policy";
-import { getSectionTitle } from "../navigation/labels";
+import { getSectionTitle, getSegmentLabel } from "../navigation/labels";
 import { findFolderIntro } from "../vault/folder-index";
 import { getFolderContents } from "../vault/folder-contents";
 import { formatRelativeTime } from "../vault/stats";
@@ -21,7 +21,7 @@ export async function renderFolderView(
 
   const header = container.createDiv({ cls: "mod-folder-header" });
   const displayTitle = folderPath.includes("/")
-    ? (folderPath.split("/").pop() ?? folderPath)
+    ? getSegmentLabel(folderPath.split("/").pop() ?? folderPath)
     : getSectionTitle(folderPath);
   header.createEl("h2", { text: displayTitle });
   header.createEl("p", {
@@ -69,7 +69,7 @@ export async function renderFolderView(
     const grid = subSection.createDiv({ cls: "mod-section-grid" });
     for (const sub of subfolders) {
       const card = grid.createDiv({ cls: "mod-section-card mod-subfolder-card" });
-      card.createEl("h4", { text: sub.name });
+      card.createEl("h4", { text: getSegmentLabel(sub.name) });
       card.addEventListener("click", () => {
         void ctx.navigate({ type: "folder", path: sub.path });
       });

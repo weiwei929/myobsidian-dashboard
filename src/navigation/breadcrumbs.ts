@@ -3,7 +3,7 @@ import {
   getFolderMode,
   isBlockedPath,
 } from "../config/folder-policy";
-import { getSectionTitle } from "./labels";
+import { getSectionTitle, getSegmentLabel } from "./labels";
 import type { DashboardRoute } from "./types";
 
 export interface BreadcrumbItem {
@@ -44,7 +44,7 @@ export function buildBreadcrumbs(route: DashboardRoute): BreadcrumbItem[] {
   for (let i = 0; i < segments.length; i++) {
     accumulated = accumulated ? `${accumulated}/${segments[i]}` : segments[i];
     const path = accumulated;
-    const label = i === 0 ? getSectionTitle(path) : segments[i];
+    const label = i === 0 ? getSectionTitle(path) : getSegmentLabel(segments[i]);
     const mode = getFolderMode(path);
     const clickable =
       mode !== "hidden" &&
