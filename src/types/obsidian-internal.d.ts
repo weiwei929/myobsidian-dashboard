@@ -1,4 +1,5 @@
 import type { Moment } from "moment";
+import type { App, TFile, TFolder } from "obsidian";
 
 export interface DailyNotesPluginInstance {
   options: {
@@ -6,11 +7,11 @@ export interface DailyNotesPluginInstance {
     format: string;
     template: string;
   };
-  createDailyNote: (date: Moment) => Promise<import("obsidian").TFile | null>;
+  createDailyNote: (date: Moment) => Promise<TFile | null>;
 }
 
 export interface FileExplorerInstance {
-  revealInFolder: (folder: import("obsidian").TFolder) => void;
+  revealInFolder: (folder: TFolder) => void;
 }
 
 export interface InternalPluginEntry<T = unknown> {
@@ -18,7 +19,7 @@ export interface InternalPluginEntry<T = unknown> {
   instance: T;
 }
 
-export interface AppWithInternals extends import("obsidian").App {
+export interface AppWithInternals extends App {
   internalPlugins: {
     plugins: Record<string, InternalPluginEntry>;
   };
