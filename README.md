@@ -75,7 +75,7 @@
 
 ### 手动安装
 
-1. 从 [Releases](https://github.com/cpf13077352008/myobsidian-dashboard/releases) 下载最新版
+1. 从 [Releases](https://github.com/weiwei929/myobsidian-dashboard/releases) 下载最新版
 2. 将 `main.js`、`manifest.json`、`styles.css` 解压到
    `<vault>/.obsidian/plugins/myobsidian-dashboard/`
 3. 重启 Obsidian，在设置中启用插件
