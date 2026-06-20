@@ -5,6 +5,7 @@ import {
   getRawDailyNotesOptions,
   hasUsableDailyNotesSettings,
 } from "./settings";
+import type { DashboardSettings } from "../config/settings";
 import type {
   AppWithInternals,
   DailyNotesPluginInstance,
@@ -17,9 +18,10 @@ function getAppInternals(app: App): AppWithInternals {
 /** 根据配置计算指定日期的日记相对路径 */
 export function resolveDailyNotePath(
   app: App,
+  settings: DashboardSettings,
   date: Moment = moment()
 ): string {
-  const { folder, format } = getDailyNotesSettings(app);
+  const { folder, format } = getDailyNotesSettings(app, settings);
   const filename = date.format(format);
   if (!folder) {
     return `${filename}.md`;
@@ -28,15 +30,21 @@ export function resolveDailyNotePath(
 }
 
 /** 获取当天日记文件，不存在则返回 null */
-export function getTodayDailyNote(app: App): TFile | null {
-  const path = resolveDailyNotePath(app);
+export function getTodayDailyNote(
+  app: App,
+  settings: DashboardSettings
+): TFile | null {
+  const path = resolveDailyNotePath(app, settings);
   const file = app.vault.getFileByPath(path);
   return file ?? null;
 }
 
 /** 通过 Daily Notes 插件或插件自有逻辑创建当天日记 */
-export async function ensureTodayDailyNote(app: App): Promise<TFile> {
-  const existing = getTodayDailyNote(app);
+export async function ensureTodayDailyNote(
+  app: App,
+  settings: DashboardSettings
+): Promise<TFile> {
+  const existing = getTodayDailyNote(app, settings);
   if (existing) {
     return existing;
   }
@@ -53,7 +61,7 @@ export async function ensureTodayDailyNote(app: App): Promise<TFile> {
     }
   }
 
-  const path = resolveDailyNotePath(app);
+  const path = resolveDailyNotePath(app, settings);
   await ensureParentFolders(app, path);
   const today = moment().format("YYYY-MM-DD");
   const minimal = [
@@ -64,7 +72,7 @@ export async function ensureTodayDailyNote(app: App): Promise<TFile> {
     "",
     `# ${today}`,
     "",
-    "## 今日要点",
+    `## 今日要点`,
     "",
   ].join("\n");
 

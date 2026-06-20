@@ -1,11 +1,16 @@
 import { Plugin, WorkspaceLeaf } from "obsidian";
 import { DashboardView, VIEW_TYPE_DASHBOARD } from "./views/DashboardView";
+import { DashboardSettings, DEFAULT_SETTINGS, DashboardSettingTab } from "./config/settings";
 
 export default class MyObsidianDashboardPlugin extends Plugin {
+  settings: DashboardSettings;
+
   async onload(): Promise<void> {
+    await this.loadSettings();
+
     this.registerView(
       VIEW_TYPE_DASHBOARD,
-      (leaf) => new DashboardView(leaf)
+      (leaf) => new DashboardView(leaf, this.settings)
     );
 
     this.addRibbonIcon("layout-dashboard", "打开 MyObsidian Dashboard", () => {
@@ -19,10 +24,30 @@ export default class MyObsidianDashboardPlugin extends Plugin {
         void this.activateDashboard();
       },
     });
+
+    this.addSettingTab(new DashboardSettingTab(this));
   }
 
   onunload(): void {
     this.app.workspace.detachLeavesOfType(VIEW_TYPE_DASHBOARD);
+  }
+
+  async loadSettings(): Promise<void> {
+    this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+  }
+
+  async saveSettings(): Promise<void> {
+    await this.saveData(this.settings);
+  }
+
+  /** 刷新当前活跃的 Dashboard 视图以反映最新的设置 */
+  rerenderActiveDashboard(): void {
+    for (const leaf of this.app.workspace.getLeavesOfType(VIEW_TYPE_DASHBOARD)) {
+      if (leaf.view instanceof DashboardView) {
+        leaf.view.updateSettings(this.settings);
+        void leaf.view.renderBody();
+      }
+    }
   }
 
   async activateDashboard(): Promise<void> {
@@ -47,7 +72,7 @@ export default class MyObsidianDashboardPlugin extends Plugin {
       return;
     }
 
-    // 2. 扫描主工作区所有 leaf，找第一个空页（active leaf 可能不是空页）
+    // 2. 扫描主工作区所有 leaf，找第一个空页
     const emptyLeaf = workspace
       .getLeavesOfType("empty")
       .find((leaf) => leaf !== activeLeaf);
@@ -56,7 +81,7 @@ export default class MyObsidianDashboardPlugin extends Plugin {
       return;
     }
 
-    // 3. active leaf 是其他可替换页（非 markdown / 非 dashboard）
+    // 3. active leaf 是其他可替换页
     if (activeLeaf && this.isReplaceableLeaf(activeLeaf)) {
       await replaceWithDashboard(activeLeaf);
       return;
@@ -69,11 +94,11 @@ export default class MyObsidianDashboardPlugin extends Plugin {
       return;
     }
 
-    // 5. 兜底：新开主工作区标签页
+    // 5. 兜底：新开标签页
     await replaceWithDashboard(workspace.getLeaf(true));
   }
 
-  /** 非 markdown / 非 dashboard 的 leaf 可替换；编辑 Markdown 时保守新开 */
+  /** 非 markdown / 非 dashboard 的 leaf 可替换 */
   private isReplaceableLeaf(leaf: WorkspaceLeaf): boolean {
     const viewType = leaf.view.getViewType();
     if (viewType === "empty") return true;

@@ -12,7 +12,7 @@ export async function renderFolderView(
   container: HTMLElement,
   folderPath: string
 ): Promise<void> {
-  const mode = getFolderMode(folderPath);
+  const mode = getFolderMode(folderPath, ctx.settings);
   if (mode === "tool") {
     const { renderToolFolderView } = await import("./ToolFolderView");
     await renderToolFolderView(ctx, container, folderPath);
@@ -22,14 +22,14 @@ export async function renderFolderView(
   const header = container.createDiv({ cls: "mod-folder-header" });
   const displayTitle = folderPath.includes("/")
     ? getSegmentLabel(folderPath.split("/").pop() ?? folderPath)
-    : getSectionTitle(folderPath);
+    : getSectionTitle(folderPath, ctx.settings.sections);
   header.createEl("h2", { text: displayTitle });
   header.createEl("p", {
     cls: "mod-folder-path",
     text: folderPath,
   });
 
-  const intro = await findFolderIntro(ctx.app, folderPath);
+  const intro = await findFolderIntro(ctx.app, folderPath, ctx.settings);
   if (intro) {
     const introSection = container.createDiv({ cls: "mod-folder-intro" });
     introSection.createEl("h3", { text: intro.label });
@@ -61,7 +61,7 @@ export async function renderFolderView(
     }
   });
 
-  const { subfolders, files } = getFolderContents(ctx.app, folderPath);
+  const { subfolders, files } = getFolderContents(ctx.app, folderPath, ctx.settings);
 
   if (subfolders.length > 0) {
     const subSection = container.createDiv({ cls: "mod-subfolders" });

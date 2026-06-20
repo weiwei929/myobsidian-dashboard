@@ -1,8 +1,5 @@
-import {
-  canNavigateToFolder,
-  getFolderMode,
-  isBlockedPath,
-} from "../config/folder-policy";
+import { canNavigateToFolder, getFolderMode, isBlockedPath } from "../config/folder-policy";
+import type { DashboardSettings } from "../config/settings";
 import { getSectionTitle, getSegmentLabel } from "./labels";
 import type { DashboardRoute } from "./types";
 
@@ -12,7 +9,10 @@ export interface BreadcrumbItem {
   clickable: boolean;
 }
 
-export function buildBreadcrumbs(route: DashboardRoute): BreadcrumbItem[] {
+export function buildBreadcrumbs(
+  route: DashboardRoute,
+  settings: DashboardSettings
+): BreadcrumbItem[] {
   const items: BreadcrumbItem[] = [
     {
       label: "知识库首页",
@@ -34,7 +34,7 @@ export function buildBreadcrumbs(route: DashboardRoute): BreadcrumbItem[] {
     folderPath = parts.join("/");
   }
 
-  if (!folderPath || isBlockedPath(folderPath)) {
+  if (!folderPath || isBlockedPath(folderPath, settings)) {
     return items;
   }
 
@@ -44,11 +44,14 @@ export function buildBreadcrumbs(route: DashboardRoute): BreadcrumbItem[] {
   for (let i = 0; i < segments.length; i++) {
     accumulated = accumulated ? `${accumulated}/${segments[i]}` : segments[i];
     const path = accumulated;
-    const label = i === 0 ? getSectionTitle(path) : getSegmentLabel(segments[i]);
-    const mode = getFolderMode(path);
+    const label =
+      i === 0
+        ? getSectionTitle(path, settings.sections)
+        : getSegmentLabel(segments[i]);
+    const mode = getFolderMode(path, settings);
     const clickable =
       mode !== "hidden" &&
-      canNavigateToFolder(path) &&
+      canNavigateToFolder(path, settings) &&
       (route.type !== "folder" || route.path !== path);
 
     items.push({

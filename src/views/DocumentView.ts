@@ -10,7 +10,7 @@ export async function renderDocumentView(
   container: HTMLElement,
   filePath: string
 ): Promise<void> {
-  if (!canNavigateToDocument(filePath)) {
+  if (!canNavigateToDocument(filePath, ctx.settings)) {
     container.createEl("p", {
       cls: "mod-empty",
       text: "该文件不在阅读前台范围内，无法在 Dashboard 内预览。",
@@ -26,7 +26,9 @@ export async function renderDocumentView(
 
   const header = container.createDiv({ cls: "mod-doc-header" });
   header.createEl("h2", { text: file.basename.replace(/\.md$/i, "") });
-  const navPath = file.parent?.path ? formatDisplayPath(file.parent.path) : "";
+  const navPath = file.parent?.path
+    ? formatDisplayPath(file.parent.path, ctx.settings.sections)
+    : "";
   if (navPath) {
     header.createEl("p", {
       cls: "mod-doc-meta",
@@ -74,6 +76,5 @@ export async function renderDocumentView(
     note.setText("内容已截断，完整阅读请点击「打开原文」。");
   }
 
-  // v0.1.2 预留：阅读留言输入区
   container.createDiv({ cls: "mod-reading-notes-slot" });
 }

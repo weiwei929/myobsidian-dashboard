@@ -1,23 +1,26 @@
 import { App, TFile, TFolder } from "obsidian";
-import { SectionMeta } from "../config/sections";
-import { BLOCKED_PATH_SEGMENTS } from "../config/folder-policy";
+import type { SectionConfig, DashboardSettings } from "../config/settings";
 
 export interface SectionStats {
-  meta: SectionMeta;
+  meta: SectionConfig;
   fileCount: number;
   latestFile: TFile | null;
   latestMtime: number;
 }
 
-/** 递归收集目录内所有 Markdown 文件，跳过被禁止的路径段 */
-function collectMarkdownFiles(folder: TFolder): TFile[] {
+/** 递归收集目录内所有 Markdown 文件，跳过被屏蔽的路径段 */
+function collectMarkdownFiles(folder: TFolder, settings: DashboardSettings): TFile[] {
   const files: TFile[] = [];
+  const blocked = new Set(settings.blockedPathSegments);
+  const hiddenFolders = new Set(
+    settings.sections.filter((s) => s.mode === "hidden").map((s) => s.folder)
+  );
   const walk = (node: TFolder) => {
     for (const child of node.children) {
       if (child instanceof TFile && child.extension === "md") {
         files.push(child);
       } else if (child instanceof TFolder) {
-        if (BLOCKED_PATH_SEGMENTS.has(child.name)) continue;
+        if (blocked.has(child.name) || hiddenFolders.has(child.name)) continue;
         walk(child);
       }
     }
@@ -28,7 +31,8 @@ function collectMarkdownFiles(folder: TFolder): TFile[] {
 
 export function getSectionStats(
   app: App,
-  meta: SectionMeta
+  meta: SectionConfig,
+  settings: DashboardSettings
 ): SectionStats {
   const folder = app.vault.getFolderByPath(meta.folder);
   if (!folder) {
@@ -40,7 +44,7 @@ export function getSectionStats(
     };
   }
 
-  const mdFiles = collectMarkdownFiles(folder);
+  const mdFiles = collectMarkdownFiles(folder, settings);
   const latest = mdFiles.reduce<TFile | null>((best, file) => {
     if (!best || file.stat.mtime > best.stat.mtime) {
       return file;

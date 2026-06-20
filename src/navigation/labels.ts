@@ -1,8 +1,4 @@
-import { SECTION_MAPPINGS } from "../config/sections";
-
-const TITLE_BY_FOLDER = new Map(
-  SECTION_MAPPINGS.map((s) => [s.folder, s.title])
-);
+import type { SectionConfig } from "../config/settings";
 
 /** 二级及以下 segment 中文映射（只做显示层，不改 Vault 路径） */
 const SEGMENT_LABELS: Record<string, string> = {
@@ -71,15 +67,22 @@ const SEGMENT_LABELS: Record<string, string> = {
 };
 
 /** 一级目录中文阅读标题；未知则回退文件夹名 */
-export function getSectionTitle(folderPath: string): string {
+export function getSectionTitle(
+  folderPath: string,
+  sections: ReadonlyArray<SectionConfig>
+): string {
   const root = folderPath.split("/")[0] ?? folderPath;
-  return TITLE_BY_FOLDER.get(root) ?? root;
+  const section = sections.find((s) => s.folder === root);
+  return section?.title ?? root;
 }
 
-export function getSectionDescription(folderPath: string): string | null {
+export function getSectionDescription(
+  folderPath: string,
+  sections: ReadonlyArray<SectionConfig>
+): string | null {
   const root = folderPath.split("/")[0] ?? folderPath;
-  const meta = SECTION_MAPPINGS.find((s) => s.folder === root);
-  return meta?.description ?? null;
+  const section = sections.find((s) => s.folder === root);
+  return section?.description ?? null;
 }
 
 /** 单个 segment 的中文显示名；未命中保持原名 */
@@ -91,9 +94,14 @@ export function getSegmentLabel(segment: string): string {
 }
 
 /** 将 Vault 路径转换为中文阅读路径（一级用 sections 标题，后续用 segment 映射） */
-export function formatDisplayPath(vaultPath: string): string {
+export function formatDisplayPath(
+  vaultPath: string,
+  sections: ReadonlyArray<SectionConfig>
+): string {
   const segments = vaultPath.split("/");
   return segments
-    .map((seg, i) => (i === 0 ? getSectionTitle(seg) : getSegmentLabel(seg)))
+    .map((seg, i) =>
+      i === 0 ? getSectionTitle(seg, sections) : getSegmentLabel(seg)
+    )
     .join(" / ");
 }

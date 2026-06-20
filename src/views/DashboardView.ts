@@ -1,8 +1,6 @@
 import { ItemView, WorkspaceLeaf, Notice } from "obsidian";
-import {
-  canNavigateToDocument,
-  canNavigateToFolder,
-} from "../config/folder-policy";
+import { canNavigateToDocument, canNavigateToFolder } from "../config/folder-policy";
+import type { DashboardSettings } from "../config/settings";
 import { ensureTodayDailyNote } from "../daily-note/resolver";
 import { writeTodayHighlight } from "../daily-note/writer";
 import { buildBreadcrumbs } from "../navigation/breadcrumbs";
@@ -15,6 +13,7 @@ import type { DashboardContext } from "./context";
 export const VIEW_TYPE_DASHBOARD = "myobsidian-dashboard-view";
 
 export class DashboardView extends ItemView {
+  private settings: DashboardSettings;
   private route: DashboardRoute = { type: "home" };
   private shellTopEl: HTMLElement | null = null;
   private shellCrumbEl: HTMLElement | null = null;
@@ -24,8 +23,9 @@ export class DashboardView extends ItemView {
   private savedHighlightsEl: HTMLElement | null = null;
   private shellReady = false;
 
-  constructor(leaf: WorkspaceLeaf) {
+  constructor(leaf: WorkspaceLeaf, settings: DashboardSettings) {
     super(leaf);
+    this.settings = settings;
   }
 
   getViewType(): string {
@@ -38,6 +38,11 @@ export class DashboardView extends ItemView {
 
   getIcon(): string {
     return "layout-dashboard";
+  }
+
+  /** 热更新 settings（供 setting tab 保存后调用） */
+  updateSettings(settings: DashboardSettings): void {
+    this.settings = settings;
   }
 
   async onOpen(): Promise<void> {
@@ -60,17 +65,18 @@ export class DashboardView extends ItemView {
     return {
       app: this.app,
       component: this,
+      settings: this.settings,
       navigate: (route) => this.navigate(route),
       revealInVault: (folderPath) => this.revealInVault(folderPath),
     };
   }
 
   async navigate(route: DashboardRoute): Promise<void> {
-    if (route.type === "folder" && !canNavigateToFolder(route.path)) {
+    if (route.type === "folder" && !canNavigateToFolder(route.path, this.settings)) {
       new Notice("无法导航到该目录");
       return;
     }
-    if (route.type === "document" && !canNavigateToDocument(route.path)) {
+    if (route.type === "document" && !canNavigateToDocument(route.path, this.settings)) {
       new Notice("无法预览该文件");
       return;
     }
@@ -172,7 +178,7 @@ export class DashboardView extends ItemView {
     if (!value) return;
 
     try {
-      await writeTodayHighlight(this.app, value);
+      await writeTodayHighlight(this.app, value, this.settings);
       const now = new Date();
       const ts = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
       const firstLine = value.split("\n")[0]?.trim() ?? "";
@@ -190,7 +196,7 @@ export class DashboardView extends ItemView {
 
   private async openTodayJournal(): Promise<void> {
     try {
-      const file = await ensureTodayDailyNote(this.app);
+      const file = await ensureTodayDailyNote(this.app, this.settings);
       await this.app.workspace.getLeaf(true).openFile(file);
     } catch (error) {
       console.error("MyObsidian Dashboard: open journal failed", error);
@@ -208,7 +214,7 @@ export class DashboardView extends ItemView {
     }
 
     this.shellCrumbEl.show();
-    const crumbs = buildBreadcrumbs(this.route);
+    const crumbs = buildBreadcrumbs(this.route, this.settings);
     const nav = this.shellCrumbEl.createDiv({ cls: "mod-breadcrumbs" });
 
     crumbs.forEach((crumb, index) => {
@@ -232,7 +238,7 @@ export class DashboardView extends ItemView {
     });
   }
 
-  private async renderBody(): Promise<void> {
+  async renderBody(): Promise<void> {
     if (!this.shellBodyEl) return;
     this.shellBodyEl.empty();
 
@@ -261,7 +267,7 @@ export class DashboardView extends ItemView {
 
   /** 保守打开 Vault 目录：尝试打开入口文件，失败时提示路径 */
   private async revealInVault(folderPath: string): Promise<void> {
-    for (const name of ["README.md", "INDEX.md", "index.md"]) {
+    for (const name of this.settings.introFilenames) {
       const file = this.app.vault.getFileByPath(`${folderPath}/${name}`);
       if (file) {
         await this.app.workspace.getLeaf(true).openFile(file);

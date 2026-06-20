@@ -1,9 +1,6 @@
 import { App, TFile } from "obsidian";
-import {
-  getFolderMode,
-  isCorruptedIntroContent,
-  isIntroFile,
-} from "../config/folder-policy";
+import { getFolderMode, isCorruptedIntroContent, isIntroFile } from "../config/folder-policy";
+import type { DashboardSettings } from "../config/settings";
 
 export interface FolderIntro {
   file: TFile;
@@ -14,9 +11,10 @@ const INTRO_PRIORITY = ["README.md", "INDEX.md", "index.md"];
 
 export async function findFolderIntro(
   app: App,
-  folderPath: string
+  folderPath: string,
+  settings: DashboardSettings
 ): Promise<FolderIntro | null> {
-  if (getFolderMode(folderPath) !== "reading") {
+  if (getFolderMode(folderPath, settings) !== "reading") {
     return null;
   }
 
@@ -24,6 +22,9 @@ export async function findFolderIntro(
     const path = `${folderPath}/${name}`;
     const file = app.vault.getFileByPath(path);
     if (!file) continue;
+
+    // 不在 introFilenames 里的跳过（用户可能删掉了默认值）
+    if (!isIntroFile(name, settings.introFilenames)) continue;
 
     const content = await app.vault.read(file);
     if (isCorruptedIntroContent(content)) continue;
@@ -35,7 +36,7 @@ export async function findFolderIntro(
   return null;
 }
 
-export function isIntroPath(filePath: string): boolean {
+export function isIntroPath(filePath: string, settings: DashboardSettings): boolean {
   const name = filePath.split("/").pop() ?? "";
-  return isIntroFile(name);
+  return isIntroFile(name, settings.introFilenames);
 }

@@ -1,11 +1,6 @@
 import { App, TFile, TFolder } from "obsidian";
-import {
-  BLOCKED_PATH_SEGMENTS,
-  MAX_FOLDER_FILES,
-  canNavigateToFolder,
-  getFolderMode,
-  isIntroFile,
-} from "../config/folder-policy";
+import { canNavigateToFolder, getFolderMode, isIntroFile } from "../config/folder-policy";
+import type { DashboardSettings } from "../config/settings";
 
 export interface FolderChildFolder {
   name: string;
@@ -18,35 +13,42 @@ export interface FolderContents {
   files: TFile[];
 }
 
-function isNavigableSubfolder(parentPath: string, childName: string): boolean {
-  if (BLOCKED_PATH_SEGMENTS.has(childName)) {
-    return false;
-  }
+function isNavigableSubfolder(
+  parentPath: string,
+  childName: string,
+  settings: DashboardSettings
+): boolean {
+  const blocked = new Set(settings.blockedPathSegments);
+  if (blocked.has(childName)) return false;
   const childPath = `${parentPath}/${childName}`;
-  return canNavigateToFolder(childPath);
+  return canNavigateToFolder(childPath, settings);
 }
 
-export function getFolderContents(app: App, folderPath: string): FolderContents {
+export function getFolderContents(
+  app: App,
+  folderPath: string,
+  settings: DashboardSettings
+): FolderContents {
   const folder = app.vault.getFolderByPath(folderPath);
   if (!folder) {
     return { subfolders: [], files: [] };
   }
 
-  const mode = getFolderMode(folderPath);
+  const mode = getFolderMode(folderPath, settings);
   const subfolders: FolderChildFolder[] = [];
   const files: TFile[] = [];
 
   for (const child of folder.children) {
     if (child instanceof TFolder) {
       if (mode === "tool") continue;
-      if (!isNavigableSubfolder(folderPath, child.name)) continue;
+      if (!isNavigableSubfolder(folderPath, child.name, settings)) continue;
       subfolders.push({
         name: child.name,
         path: child.path,
-        mode: getFolderMode(child.path),
+        mode: getFolderMode(child.path, settings),
       });
     } else if (child instanceof TFile && child.extension === "md") {
-      if (isIntroFile(child.name)) continue;
+      if (isIntroFile(child.name, settings.introFilenames)) continue;
       if (mode === "tool") continue;
       files.push(child);
     }
@@ -57,6 +59,6 @@ export function getFolderContents(app: App, folderPath: string): FolderContents 
 
   return {
     subfolders,
-    files: files.slice(0, MAX_FOLDER_FILES),
+    files: files.slice(0, settings.maxFolderFiles),
   };
 }

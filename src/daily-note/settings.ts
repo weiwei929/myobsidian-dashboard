@@ -1,5 +1,5 @@
 import { App } from "obsidian";
-import { DEFAULT_DAILY_NOTES } from "../config/defaults";
+import type { DashboardSettings } from "../config/settings";
 import type {
   AppWithInternals,
   DailyNotesPluginInstance,
@@ -34,54 +34,52 @@ export function getRawDailyNotesOptions(app: App): DailyNotesSettings | null {
   };
 }
 
-/** 将空字符串 / 缺失值回退到 DEFAULT_DAILY_NOTES，供路径解析使用 */
+function getFallbackTemplate(settings: DashboardSettings): DailyNotesSettings {
+  return {
+    folder: settings.dailyNotesFolder,
+    format: settings.dailyNotesFormat,
+    template: settings.dailyNotesTemplate,
+  };
+}
+
+/** 将空字符串 / 缺失值回退到 DashboardSettings 中的配置 */
 export function normalizeDailyNotesSettings(
-  raw: DailyNotesSettings | null
+  raw: DailyNotesSettings | null,
+  settings: DashboardSettings
 ): DailyNotesSettings {
+  const fallback = getFallbackTemplate(settings);
   if (!raw) {
-    return { ...DEFAULT_DAILY_NOTES };
+    return { ...fallback };
   }
   return {
-    folder: isNonEmptyString(raw.folder)
-      ? raw.folder.trim()
-      : DEFAULT_DAILY_NOTES.folder,
-    format: isNonEmptyString(raw.format)
-      ? raw.format.trim()
-      : DEFAULT_DAILY_NOTES.format,
+    folder: isNonEmptyString(raw.folder) ? raw.folder.trim() : fallback.folder,
+    format: isNonEmptyString(raw.format) ? raw.format.trim() : fallback.format,
     template: isNonEmptyString(raw.template)
       ? raw.template.trim()
-      : DEFAULT_DAILY_NOTES.template,
+      : fallback.template,
   };
 }
 
 /**
  * 基于 Obsidian Daily Notes 原始 options 判断是否可调用 createDailyNote()。
- * 不使用归一化后的 fallback 配置做此判断。
  */
 export function hasUsableDailyNotesSettings(
   raw: DailyNotesSettings | null
 ): boolean {
-  if (!raw) {
-    return false;
-  }
+  if (!raw) return false;
   const folder = raw.folder.trim();
   const format = raw.format.trim();
-  if (!folder || !format) {
-    return false;
-  }
-  if (!format.includes("YYYY")) {
-    return false;
-  }
-  if (!format.includes("MM")) {
-    return false;
-  }
-  if (!format.includes("DD")) {
-    return false;
-  }
+  if (!folder || !format) return false;
+  if (!format.includes("YYYY")) return false;
+  if (!format.includes("MM")) return false;
+  if (!format.includes("DD")) return false;
   return true;
 }
 
 /** 归一化后的有效配置，用于 resolveDailyNotePath() */
-export function getDailyNotesSettings(app: App): DailyNotesSettings {
-  return normalizeDailyNotesSettings(getRawDailyNotesOptions(app));
+export function getDailyNotesSettings(
+  app: App,
+  settings: DashboardSettings
+): DailyNotesSettings {
+  return normalizeDailyNotesSettings(getRawDailyNotesOptions(app), settings);
 }

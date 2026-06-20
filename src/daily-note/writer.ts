@@ -1,29 +1,30 @@
 import { App, TFile, moment } from "obsidian";
-import { TODAY_HIGHLIGHT_SECTION } from "../config/defaults";
+import type { DashboardSettings } from "../config/settings";
 import { ensureTodayDailyNote } from "./resolver";
 
 /**
  * 格式化今日要点 bullet：`- HH:mm 内容`
- * 多行时第一行为 bullet，后续行缩进 2 空格（Markdown 续行）。
  */
 export function formatHighlightBullet(content: string): string {
   const time = moment().format("HH:mm");
   const lines = content.trim().split("\n");
   const first = `- ${time} ${lines[0].trim()}`;
   if (lines.length === 1) return first;
-  const rest = lines.slice(1).map((l) => `  ${l.trim()}`).join("\n");
+  const rest = lines
+    .slice(1)
+    .map((l) => `  ${l.trim()}`)
+    .join("\n");
   return `${first}\n${rest}`;
 }
 
 /**
  * 将一条 bullet 追加到 `## 今日要点` 小节。
- * 不重排全文；小节不存在时在靠前位置插入。
  */
 export function appendToTodayHighlights(
   fileContent: string,
-  bullet: string
+  bullet: string,
+  sectionHeader: string
 ): string {
-  const sectionHeader = TODAY_HIGHLIGHT_SECTION;
   const lines = fileContent.split("\n");
   const sectionIndex = lines.findIndex(
     (line) => line.trim() === sectionHeader
@@ -65,12 +66,17 @@ function insertSectionNearTop(content: string, sectionBlock: string): string {
 /** 写入今日要点并返回目标文件 */
 export async function writeTodayHighlight(
   app: App,
-  content: string
+  content: string,
+  settings: DashboardSettings
 ): Promise<TFile> {
-  const file = await ensureTodayDailyNote(app);
+  const file = await ensureTodayDailyNote(app, settings);
   const bullet = formatHighlightBullet(content);
   const current = await app.vault.read(file);
-  const updated = appendToTodayHighlights(current, bullet);
+  const updated = appendToTodayHighlights(
+    current,
+    bullet,
+    settings.todayHighlightSection
+  );
   if (updated !== current) {
     await app.vault.modify(file, updated);
   }
