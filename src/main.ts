@@ -10,7 +10,7 @@ export default class MyObsidianDashboardPlugin extends Plugin {
 
     this.registerView(
       VIEW_TYPE_DASHBOARD,
-      (leaf) => new DashboardView(leaf, this.settings)
+      (leaf) => new DashboardView(leaf, this.settings, () => this.saveSettings())
     );
 
     this.addRibbonIcon("layout-dashboard", "打开 MyObsidian Dashboard", () => {

@@ -22,10 +22,12 @@ export class DashboardView extends ItemView {
   private savedHighlights: Array<{ time: string; text: string }> = [];
   private savedHighlightsEl: HTMLElement | null = null;
   private shellReady = false;
+  private saveSettings: () => Promise<void>;
 
-  constructor(leaf: WorkspaceLeaf, settings: DashboardSettings) {
+  constructor(leaf: WorkspaceLeaf, settings: DashboardSettings, saveSettings: () => Promise<void>) {
     super(leaf);
     this.settings = settings;
+    this.saveSettings = saveSettings;
   }
 
   getViewType(): string {
@@ -46,6 +48,7 @@ export class DashboardView extends ItemView {
   }
 
   async onOpen(): Promise<void> {
+    this.savedHighlights = [...(this.settings.savedHighlights ?? [])];
     this.ensureShell();
     await this.navigate({ type: "home" });
   }
@@ -184,6 +187,9 @@ export class DashboardView extends ItemView {
       const firstLine = value.split("\n")[0]?.trim() ?? "";
       this.savedHighlights.unshift({ time: ts, text: firstLine });
       this.savedHighlights = this.savedHighlights.slice(0, 5);
+      // 持久化到 data.json
+      this.settings.savedHighlights = [...this.savedHighlights];
+      await this.saveSettings();
       this.highlightInput.value = "";
       this.highlightInput.style.height = "auto";
       this.renderSavedHighlights();

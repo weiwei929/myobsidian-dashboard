@@ -23,6 +23,8 @@ export interface DashboardSettings {
   dailyNotesFormat: string;
   dailyNotesTemplate: string;
   maxFolderFiles: number;
+  /** 最近保存的今日要点（持久化到 data.json） */
+  savedHighlights: Array<{ time: string; text: string }>;
 }
 
 export const DEFAULT_SETTINGS: DashboardSettings = {
@@ -53,6 +55,7 @@ export const DEFAULT_SETTINGS: DashboardSettings = {
   dailyNotesFormat: "YYYY/MM/YYYY-MM-DD",
   dailyNotesTemplate: "",
   maxFolderFiles: 50,
+  savedHighlights: [],
 };
 
 // ─── Setting Tab ───────────────────────────────────────────────
@@ -259,6 +262,15 @@ export class DashboardSettingTab extends PluginSettingTab {
             if (!isNaN(n) && n > 0) {
               this.plugin.settings.maxFolderFiles = n;
             }
+          })
+      )
+      .addExtraButton((btn) =>
+        btn
+          .setIcon("rotate-ccw")
+          .setTooltip("重置为默认值 (50)")
+          .onClick(() => {
+            this.plugin.settings.maxFolderFiles = 50;
+            this.display();
           })
       );
 
