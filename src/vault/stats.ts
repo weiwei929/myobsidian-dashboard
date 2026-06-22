@@ -64,7 +64,7 @@ export function formatRelativeTime(mtimeMs: number): string {
   if (!mtimeMs) {
     return "暂无";
   }
-  const diff = Date.now() - mtimeMs;
+  const diff = Math.abs(Date.now() - mtimeMs);
   const minutes = Math.floor(diff / 60000);
   if (minutes < 1) return "刚刚";
   if (minutes < 60) return `${minutes} 分钟前`;

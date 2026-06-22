@@ -25,7 +25,7 @@ export async function renderDocumentView(
   }
 
   const header = container.createDiv({ cls: "mod-doc-header" });
-  header.createEl("h2", { text: file.basename.replace(/\.md$/i, "") });
+  header.createEl("h2", { text: file.basename });
   const navPath = file.parent?.path
     ? formatDisplayPath(file.parent.path, ctx.settings.sections)
     : "";

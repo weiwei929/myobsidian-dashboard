@@ -5,6 +5,7 @@ import { findFolderIntro } from "../vault/folder-index";
 import { getFolderContents } from "../vault/folder-contents";
 import { formatRelativeTime } from "../vault/stats";
 import { renderFilePreview } from "../render/markdown";
+import { renderToolFolderView } from "./ToolFolderView";
 import type { DashboardContext } from "./context";
 
 export async function renderFolderView(
@@ -14,7 +15,6 @@ export async function renderFolderView(
 ): Promise<void> {
   const mode = getFolderMode(folderPath, ctx.settings);
   if (mode === "tool") {
-    const { renderToolFolderView } = await import("./ToolFolderView");
     await renderToolFolderView(ctx, container, folderPath);
     return;
   }

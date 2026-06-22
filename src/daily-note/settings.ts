@@ -70,9 +70,10 @@ export function hasUsableDailyNotesSettings(
   const folder = raw.folder.trim();
   const format = raw.format.trim();
   if (!folder || !format) return false;
-  if (!format.includes("YYYY")) return false;
-  if (!format.includes("MM")) return false;
-  if (!format.includes("DD")) return false;
+  // 检查 format 包含年、月、日组件以确认是合法的每日笔记格式
+  if (!/[Yy]/.test(format)) return false;
+  if (!/M/.test(format)) return false;
+  if (!/D/.test(format)) return false;
   return true;
 }
 
